@@ -1,28 +1,19 @@
 <script setup>
 import { useVuelidate } from "@vuelidate/core";
-import { email, minLength, required, sameAs } from "@vuelidate/validators";
+import { email, required } from "@vuelidate/validators";
 import { computed, reactive, ref } from "vue";
 import { useToast } from "vue-toastification";
-import { registerApi } from "../api/auth.api";
+import { loginApi } from "../api/auth.api";
 import { useAuthStore } from "../stores/auth";
 
 const form = reactive({
-  name: "",
-  username: "",
   email: "",
   password: "",
-  password_confirmation: "",
 });
 
 const rules = computed(() => ({
-  name: { required },
-  username: { required },
   email: { required, email },
-  password: { required, minLength: minLength(8) },
-  password_confirmation: {
-    required,
-    sameAs: sameAs(form.password),
-  },
+  password: { required },
 }));
 
 const v$ = useVuelidate(rules, form);
@@ -37,33 +28,31 @@ const submit = async () => {
   isLoading.value = true;
 
   try {
-    const response = await registerApi(form);
+    const response = await loginApi(form);
 
     // Store token and user data
     if (response.data.data.token) {
       authStore.setAuth(response.data.data.token);
     }
 
-    const toastId = toast.success("Account created successfully!", {
+    const toastId = toast.success("Logged in successfully!", {
       timeout: false,
     });
 
     Object.assign(form, {
-      name: "",
-      username: "",
       email: "",
       password: "",
-      password_confirmation: "",
     });
 
     v$.value.$reset();
 
     setTimeout(() => {
       toast.dismiss(toastId);
-      // window.location.href = "/login";
+      window.location.href = "/";
     }, 1500);
   } catch (error) {
     handleApiError(error);
+    return;
   } finally {
     isLoading.value = false;
   }
@@ -78,11 +67,10 @@ const handleApiError = (error) => {
           v$.value[field].$touch();
         }
       });
-
-      const firstError = Object.values(errors)[0][0];
-      toast.error(firstError);
-      return;
     }
+
+    toast.error("Please fix the highlighted errors.");
+    return;
   }
 
   if (error?.response?.data?.message) {
@@ -90,7 +78,7 @@ const handleApiError = (error) => {
     return;
   }
 
-  // Network or unknown error
+  // Network / Unknown
   toast.error("Something went wrong. Please try again.");
 };
 </script>
@@ -100,35 +88,8 @@ const handleApiError = (error) => {
     <div
       class="flex flex-col justify-center items-center w-fit text-[#e7e9ea] bg-black p-10 rounded-xl"
     >
-      <h1 class="font-bold text-3xl mb-4">Create your account</h1>
+      <h1 class="font-bold text-3xl mb-4">Login to your account</h1>
       <form @submit.prevent="submit" class="flex flex-col gap-6 w-80">
-        <!-- name -->
-        <div class="flex flex-col gap-2 w-80">
-          <input
-            v-model="form.name"
-            @blur="v$.name.$touch()"
-            placeholder="Name"
-            class="border border-[#ffffff52] bg-transparent p-3 rounded-lg outline-none text-[#e7e9ea]"
-          />
-          <small v-if="v$.name.$dirty && v$.name.$error" class="text-red-500">
-            Name is required
-          </small>
-        </div>
-        <!-- username -->
-        <div class="flex flex-col gap-2 w-80">
-          <input
-            v-model="form.username"
-            @blur="v$.username.$touch()"
-            placeholder="Username"
-            class="border border-[#ffffff52] bg-transparent p-3 rounded-lg outline-none text-[#e7e9ea]"
-          />
-          <small
-            v-if="v$.username.$dirty && v$.username.$error"
-            class="text-red-500"
-          >
-            Username is required
-          </small>
-        </div>
         <!-- email -->
         <div class="flex flex-col gap-2 w-80">
           <input
@@ -154,25 +115,7 @@ const handleApiError = (error) => {
             v-if="v$.password.$dirty && v$.password.$error"
             class="text-red-500"
           >
-            Password must be at least 8 characters
-          </small>
-        </div>
-        <!-- password confirmation -->
-        <div class="flex flex-col gap-2 w-80">
-          <input
-            type="password"
-            v-model="form.password_confirmation"
-            @blur="v$.password_confirmation.$touch()"
-            placeholder="Confirm Password"
-            class="border border-[#ffffff52] bg-transparent p-3 rounded-lg outline-none text-[#e7e9ea]"
-          />
-          <small
-            v-if="
-              v$.password_confirmation.$dirty && v$.password_confirmation.$error
-            "
-            class="text-red-500"
-          >
-            Passwords must match
+            Password is required
           </small>
         </div>
 
@@ -181,7 +124,7 @@ const handleApiError = (error) => {
           :disabled="isLoading"
           class="bg-[#e7e9ea] text-black cursor-pointer p-3 rounded-lg mt-2 font-bold hover:bg-[#d6d8da] transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ isLoading ? "Creating account..." : "Sign Up" }}
+          {{ isLoading ? "Logging in..." : "Login" }}
         </button>
       </form>
     </div>
