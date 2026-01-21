@@ -9,7 +9,7 @@ Tweety is a modern **social media platform** built with **Vue.js** on the fronte
 Tweety aims to provide a complete social media experience where users can:
 
 * Create accounts and authenticate securely 
-* Share posts and interact with others
+* Share posts and interact with others 
 * Communicate in real time
 * Receive notifications for important activities 
  
